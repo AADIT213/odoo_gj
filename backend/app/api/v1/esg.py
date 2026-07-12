@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.api import deps
 from app.models.esg import ESGWeightConfig as ESGWeightConfigModel
-from app.schemas.esg import ESGWeightConfig, ESGWeightConfigUpdate
-from app.services import esg_engine
+from app.schemas.esg import ESGWeightConfig, ESGWeightConfigUpdate, AppSettings
+from app.services import esg_engine, emission_service
 
 router = APIRouter()
 
@@ -106,3 +106,27 @@ def get_all_scores(
             for d in departments
         ]
     }
+
+
+@router.get("/settings", response_model=AppSettings)
+def get_settings(
+    db: deps.SessionDep,
+    current_user=Depends(deps.get_current_active_user),
+):
+    """Return the current application settings (includes auto-emission toggle)."""
+    return emission_service.get_settings(db)
+
+
+@router.put("/settings", response_model=AppSettings)
+def update_settings(
+    *,
+    db: deps.SessionDep,
+    settings_in: AppSettings,
+    current_user=Depends(deps.get_current_active_superuser),
+):
+    """Toggle auto-emission calculation. SuperAdmin only."""
+    config = emission_service.get_settings(db)
+    config.auto_emission_calc_enabled = settings_in.auto_emission_calc_enabled
+    db.commit()
+    db.refresh(config)
+    return config

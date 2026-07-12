@@ -2,7 +2,8 @@ from typing import List
 from fastapi import APIRouter, Depends
 from app.api import deps
 from app.crud import crud_environmental
-from app.schemas.environmental import EnvironmentalData, EnvironmentalDataCreate, EnvironmentalDataUpdate, SustainabilityGoal, SustainabilityGoalCreate, CarbonTransaction, CarbonTransactionCreate
+from app.schemas.environmental import EnvironmentalData, EnvironmentalDataCreate, EnvironmentalDataUpdate, SustainabilityGoal, SustainabilityGoalCreate, CarbonTransaction, CarbonTransactionCreate, AutoCalcTransactionRequest
+from app.services import emission_service
 
 router = APIRouter()
 
@@ -67,3 +68,27 @@ def create_transaction(
     current_user = Depends(deps.get_current_active_superuser),
 ):
     return crud_environmental.create_carbon_transaction(db, obj_in=transaction_in)
+
+
+@router.post("/transactions/auto", response_model=CarbonTransaction)
+def create_auto_transaction(
+    *,
+    db: deps.SessionDep,
+    request_in: AutoCalcTransactionRequest,
+    current_user = Depends(deps.get_current_active_superuser),
+):
+    """
+    Auto-calculate CO2e from source_type + quantity + unit using stored EmissionFactors.
+    Requires auto_emission_calc_enabled=True in settings (toggle in admin panel).
+    Returns 400 if toggle is off or no matching EmissionFactor found.
+    """
+    return emission_service.calculate_carbon_transaction(
+        db=db,
+        source_type=request_in.source_type,
+        quantity=request_in.quantity,
+        unit=request_in.unit,
+        department_id=request_in.department_id,
+        transaction_type=request_in.transaction_type,
+        date=request_in.date,
+        description=request_in.description,
+    )

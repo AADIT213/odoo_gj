@@ -59,6 +59,8 @@ class CarbonTransactionBase(BaseModel):
     amount_mt: float
     date: date
     description: Optional[str] = None
+    calculation_method: Optional[str] = "Manual"
+    unit: Optional[str] = None
 
 class CarbonTransactionCreate(CarbonTransactionBase):
     pass
@@ -68,3 +70,12 @@ class CarbonTransaction(CarbonTransactionBase):
 
     class Config:
         from_attributes = True
+
+class AutoCalcTransactionRequest(BaseModel):
+    department_id: int
+    source_type: str   # "Purchase" | "Manufacturing" | "Expense" | "Fleet"
+    quantity: float
+    unit: str
+    transaction_type: str = "Credit"  # "Credit" or "Offset"
+    date: date
+    description: Optional[str] = None

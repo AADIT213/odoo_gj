@@ -41,4 +41,6 @@ class CarbonTransaction(Base):
     amount_mt = Column(Float, nullable=False)
     date = Column(Date, nullable=False)
     description = Column(String)
+    calculation_method = Column(String, default="Manual")  # "Manual" or "Auto"
+    unit = Column(String, nullable=True)  # unit used for auto calculation (e.g. "kWh", "kg")
 

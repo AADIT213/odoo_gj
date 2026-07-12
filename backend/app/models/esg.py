@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float
+from sqlalchemy import Column, Integer, Float, Boolean
 from app.db.base_class import Base
 
 class ESGWeightConfig(Base):
@@ -6,3 +6,4 @@ class ESGWeightConfig(Base):
     env_weight = Column(Float, default=0.40)
     soc_weight = Column(Float, default=0.30)
     gov_weight = Column(Float, default=0.30)
+    auto_emission_calc_enabled = Column(Boolean, default=False)
