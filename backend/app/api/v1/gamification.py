@@ -76,7 +76,7 @@ def get_leaderboard(
             "name": u.full_name,
             "department": u.department.name if u.department else "Unassigned",
             "xp": u.xp,
-            "badges": len(u.badges)
+            "badges": 0
         }
         for u in users
     ]
@@ -88,7 +88,7 @@ def get_my_stats(
 ):
     return {
         "xp": current_user.xp,
-        "badges": len(current_user.badges),
+        "badges": 0,
         "level": current_user.xp // 1000 + 1
     }
 
