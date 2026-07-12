@@ -29,9 +29,14 @@ class Audit(Base):
 class ComplianceIssue(Base):
     id = Column(Integer, primary_key=True, index=True)
     department_id = Column(Integer, ForeignKey("department.id"), nullable=False)
+    owner_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     title = Column(String, nullable=False)
     description = Column(String)
     severity = Column(String, default="Medium") # Low, Medium, High, Critical
-    status = Column(String, default="Open") # Open, Resolved
+    status = Column(String, default="Open") # Open, Resolved, Overdue
     due_date = Column(Date, nullable=False)
+
+    # Relationships
+    department = relationship("Department")
+    owner = relationship("User")
 

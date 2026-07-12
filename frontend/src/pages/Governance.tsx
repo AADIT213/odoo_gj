@@ -1,7 +1,9 @@
-
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Shield, FileWarning, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Shield, FileWarning, CheckCircle, AlertTriangle, FileText, Plus, CheckCircle2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -9,6 +11,15 @@ import { useAuth } from '@/context/AuthContext';
 export default function Governance() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newIssue, setNewIssue] = useState({ title: '', description: '', severity: 'Medium', due_date: '', department_id: 1, owner_id: 1 });
+
+  // Automatically detect overdue issues on load
+  useEffect(() => {
+    api.post('/governance/compliance-issues/detect-overdue').then(() => {
+      queryClient.invalidateQueries({ queryKey: ['complianceIssues'] });
+    }).catch(console.error);
+  }, [queryClient]);
 
   const { data: policies, isLoading: policiesLoading } = useQuery({
     queryKey: ['policies'],
@@ -39,7 +50,27 @@ export default function Governance() {
     }
   });
 
-  const openIssues = issues?.filter((i: any) => i.status === 'Open')?.length || 0;
+  const resolveMutation = useMutation({
+    mutationFn: async (issueId: number) => {
+      return api.put(`/governance/compliance-issues/${issueId}/resolve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['complianceIssues'] });
+    }
+  });
+
+  const createIssueMutation = useMutation({
+    mutationFn: async () => {
+      return api.post('/governance/compliance-issues', newIssue);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['complianceIssues'] });
+      setShowCreateForm(false);
+      setNewIssue({ title: '', description: '', severity: 'Medium', due_date: '', department_id: 1, owner_id: 1 });
+    }
+  });
+
+  const openIssues = issues?.filter((i: any) => i.status === 'Open' || i.status === 'Overdue')?.length || 0;
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -123,10 +154,37 @@ export default function Governance() {
         </Card>
 
         <Card className="glass">
-          <CardHeader>
-            <CardTitle>Recent Audit Findings</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Compliance Issues</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setShowCreateForm(!showCreateForm)} className="gap-1">
+              <Plus className="w-4 h-4" /> New Issue
+            </Button>
           </CardHeader>
           <CardContent>
+            {showCreateForm && (
+              <div className="p-4 mb-4 rounded-lg border border-border/50 bg-accent/5 space-y-3">
+                <Input placeholder="Issue Title" value={newIssue.title} onChange={e => setNewIssue({...newIssue, title: e.target.value})} />
+                <Input placeholder="Description" value={newIssue.description} onChange={e => setNewIssue({...newIssue, description: e.target.value})} />
+                <div className="flex gap-2">
+                  <Input type="date" value={newIssue.due_date} onChange={e => setNewIssue({...newIssue, due_date: e.target.value})} />
+                  <Input placeholder="Owner ID" type="number" value={newIssue.owner_id} onChange={e => setNewIssue({...newIssue, owner_id: parseInt(e.target.value)})} />
+                </div>
+                <Select value={newIssue.severity} onValueChange={v => setNewIssue({...newIssue, severity: v})}>
+                  <SelectTrigger><SelectValue placeholder="Severity" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2 justify-end">
+                  <Button size="sm" variant="outline" onClick={() => setShowCreateForm(false)}>Cancel</Button>
+                  <Button size="sm" onClick={() => createIssueMutation.mutate()} disabled={createIssueMutation.isPending || !newIssue.title || !newIssue.due_date}>Save Issue</Button>
+                </div>
+              </div>
+            )}
+
             {issuesLoading ? (
               <div className="space-y-4">
                 {[1,2].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded"></div>)}
@@ -136,15 +194,22 @@ export default function Governance() {
             ) : (
               <div className="space-y-4">
                 {issues?.map((issue: any) => (
-                  <div key={issue.id} className={`p-4 rounded-lg border flex gap-4 ${issue.severity === 'Critical' ? 'bg-red-500/10 border-red-500/20' : issue.severity === 'High' ? 'bg-orange-500/10 border-orange-500/20' : 'bg-yellow-500/10 border-yellow-500/20'}`}>
-                    <FileWarning className={`w-6 h-6 shrink-0 ${issue.severity === 'Critical' ? 'text-red-500' : issue.severity === 'High' ? 'text-orange-500' : 'text-yellow-500'}`} />
-                    <div>
-                      <h4 className={`font-semibold ${issue.severity === 'Critical' ? 'text-red-500' : issue.severity === 'High' ? 'text-orange-500' : 'text-yellow-500'}`}>
-                        {issue.title}
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-1">{issue.description || 'No description provided.'}</p>
-                      <div className="mt-2 text-xs font-medium">Due: {new Date(issue.due_date).toLocaleDateString()} | Status: {issue.status}</div>
+                  <div key={issue.id} className={`p-4 rounded-lg border flex justify-between gap-4 ${issue.status === 'Overdue' ? 'bg-red-500/20 border-red-500/40' : issue.severity === 'Critical' ? 'bg-red-500/10 border-red-500/20' : issue.severity === 'High' ? 'bg-orange-500/10 border-orange-500/20' : 'bg-yellow-500/10 border-yellow-500/20'} ${issue.status === 'Resolved' && 'opacity-60 bg-green-500/10 border-green-500/20'}`}>
+                    <div className="flex gap-4">
+                      <FileWarning className={`w-6 h-6 shrink-0 ${issue.status === 'Overdue' ? 'text-red-600' : issue.severity === 'Critical' ? 'text-red-500' : issue.severity === 'High' ? 'text-orange-500' : 'text-yellow-500'} ${issue.status === 'Resolved' && 'text-green-500'}`} />
+                      <div>
+                        <h4 className={`font-semibold ${issue.status === 'Overdue' ? 'text-red-600' : issue.severity === 'Critical' ? 'text-red-500' : issue.severity === 'High' ? 'text-orange-500' : 'text-yellow-500'} ${issue.status === 'Resolved' && 'text-green-500'}`}>
+                          {issue.title} {issue.status === 'Overdue' && '(OVERDUE)'}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">{issue.description || 'No description provided.'}</p>
+                        <div className="mt-2 text-xs font-medium">Due: {new Date(issue.due_date).toLocaleDateString()} | Owner ID: {issue.owner_id} | Status: {issue.status}</div>
+                      </div>
                     </div>
+                    {issue.status !== 'Resolved' && (
+                        <Button size="sm" variant="outline" onClick={() => resolveMutation.mutate(issue.id)} disabled={resolveMutation.isPending} className="self-center">
+                          Resolve
+                        </Button>
+                    )}
                   </div>
                 ))}
               </div>
