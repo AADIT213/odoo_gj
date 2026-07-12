@@ -5,18 +5,18 @@ import random
 
 router = APIRouter()
 
-@router.get("/recommendations", response_model=List[Dict[str, Any]])
+@router.get("/recommendations")
 def get_ai_recommendations(
     department_id: int = None,
     db: deps.SessionDep = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user),
 ):
     """
-    Simulates an AI Sustainability Advisor analyzing ESG data and generating actionable recommendations.
-    In a real app, this would call an LLM (e.g. Gemini/OpenAI) with the department's metrics.
+    Simulates an AI Sustainability Advisor analyzing ESG data and generating actionable recommendations, 
+    including an Executive Summary and Department-specific recommendations.
     """
     
-    recommendations = [
+    global_recommendations = [
         {
             "id": 1,
             "category": "Environmental",
@@ -46,6 +46,32 @@ def get_ai_recommendations(
         }
     ]
     
+    department_recommendations = [
+        {
+            "id": 101,
+            "department": "Engineering",
+            "issue": "High Cloud Computing Emissions",
+            "recommendation": "Migrate 30% of non-critical workloads to renewable-powered server regions to improve the department's environmental score by 12 points."
+        },
+        {
+            "id": 102,
+            "department": "Human Resources",
+            "issue": "Low Diversity & Inclusion Training Completion",
+            "recommendation": "Initiate a mandatory workshop by Q3 to boost the Social Score and maintain compliance with the new ESG policy framework."
+        }
+    ]
+    
+    executive_summary = (
+        "Overall, the organization maintains a strong Governance posture, but Environmental and Social metrics show variance. "
+        "Key focus areas for this quarter should be reducing Scope 2 emissions through facility optimizations and increasing "
+        "employee participation in CSR initiatives. Addressing these could elevate the total ESG score from 'Needs Improvement' to 'Excellent'."
+    )
+    
     # Randomize slightly to feel 'dynamic'
-    random.shuffle(recommendations)
-    return recommendations
+    random.shuffle(global_recommendations)
+    
+    return {
+        "executive_summary": executive_summary,
+        "department_recommendations": department_recommendations,
+        "global_recommendations": global_recommendations
+    }
