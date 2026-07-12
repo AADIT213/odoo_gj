@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Leaf, Heart, Shield, Trophy, FileText, BrainCircuit, Bell, ShoppingBag, X, CheckCheck, Medal } from 'lucide-react';
+import { LayoutDashboard, Users, Leaf, Heart, Shield, Trophy, FileText, Bell, ShoppingBag, X, CheckCheck, Medal, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,7 +17,7 @@ const sidebarNavItems = [
   { title: "My Badges", href: "/badges", icon: Medal },
   { title: "Rewards Store", href: "/rewards", icon: ShoppingBag },
   { title: "Reports", href: "/reports", icon: FileText },
-  { title: "AI Advisor", href: "/advisor", icon: BrainCircuit },
+  { title: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function DashboardLayout() {

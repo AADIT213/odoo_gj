@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import AuthGuard from './components/AuthGuard';
-
 // Lazy load components
 const DashboardLayout = React.lazy(() => import('./layouts/DashboardLayout'));
 const DashboardOverview = React.lazy(() => import('./pages/DashboardOverview'));
@@ -17,7 +16,7 @@ const Advisor = React.lazy(() => import('./pages/Advisor'));
 const RewardMarketplace = React.lazy(() => import('./pages/RewardMarketplace'));
 const NotificationCenter = React.lazy(() => import('./pages/NotificationCenter'));
 const Badges = React.lazy(() => import('./pages/Badges'));
-
+const Settings = React.lazy(() => import('./pages/Settings'));
 function App() {
   return (
     <AuthProvider>
@@ -28,7 +27,6 @@ function App() {
       }>
         <Routes>
           <Route path="/login" element={<Login />} />
-          
           {/* Protected Routes */}
           <Route element={<AuthGuard />}>
             <Route path="/" element={<DashboardLayout />}>
@@ -40,6 +38,7 @@ function App() {
               <Route path="gamification" element={<Gamification />} />
               <Route path="rewards" element={<RewardMarketplace />} />
               <Route path="badges" element={<Badges />} />
+              <Route path="settings" element={<Settings />} />
               <Route path="reports" element={<Reports />} />
               <Route path="advisor" element={<Advisor />} />
               <Route path="notifications" element={<NotificationCenter />} />
@@ -50,5 +49,4 @@ function App() {
     </AuthProvider>
   );
 }
-
 export default App;

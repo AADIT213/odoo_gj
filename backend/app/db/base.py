@@ -9,3 +9,4 @@ from app.models.notification import Notification
 from app.models.esg import ESGWeightConfig
 
 # Import all models here so Alembic or create_all can discover them easily
+from app.models.category import Category

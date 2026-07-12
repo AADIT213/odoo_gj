@@ -19,3 +19,22 @@ def create_department(db: Session, obj_in: DepartmentCreate) -> Department:
     db.commit()
     db.refresh(db_obj)
     return db_obj
+
+
+def update_department(db: Session, dept_id: int, obj_in: dict) -> Optional[Department]:
+    db_obj = db.query(Department).filter(Department.id == dept_id).first()
+    if not db_obj:
+        return None
+    for field, value in obj_in.items():
+        setattr(db_obj, field, value)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+
+def delete_department(db: Session, dept_id: int) -> bool:
+    db_obj = db.query(Department).filter(Department.id == dept_id).first()
+    if not db_obj:
+        return False
+    db.delete(db_obj)
+    db.commit()
+    return True
