@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, CheckCheck, Trash2, Filter, Search, RefreshCw,
-  Gift, Award, Target, ClipboardCheck, Leaf, Shield, Info, AlertTriangle, Zap, X
+  Award, ClipboardCheck, Leaf, Shield, Info, AlertTriangle, Zap, X
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -38,17 +38,17 @@ function relativeTime(isoString: string): string {
 
 const PRIORITY_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
   Critical: { label: 'Critical', color: 'text-red-400 bg-red-500/10 border-red-500/30', dot: 'bg-red-500' },
-  High:     { label: 'High',     color: 'text-orange-400 bg-orange-500/10 border-orange-500/30', dot: 'bg-orange-400' },
-  Medium:   { label: 'Medium',   color: 'text-blue-400 bg-blue-500/10 border-blue-500/30', dot: 'bg-blue-400' },
-  Low:      { label: 'Low',      color: 'text-slate-400 bg-slate-500/10 border-slate-500/30', dot: 'bg-slate-400' },
+  High: { label: 'High', color: 'text-orange-400 bg-orange-500/10 border-orange-500/30', dot: 'bg-orange-400' },
+  Medium: { label: 'Medium', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30', dot: 'bg-blue-400' },
+  Low: { label: 'Low', color: 'text-slate-400 bg-slate-500/10 border-slate-500/30', dot: 'bg-slate-400' },
 };
 
 const TYPE_CONFIG: Record<string, { icon: React.ComponentType<any>; color: string }> = {
-  Gamification: { icon: Award,          color: 'text-purple-400' },
-  Social:       { icon: ClipboardCheck, color: 'text-green-400'  },
-  Governance:   { icon: Shield,         color: 'text-yellow-400' },
-  Environmental:{ icon: Leaf,           color: 'text-emerald-400'},
-  System:       { icon: Info,           color: 'text-blue-400'   },
+  Gamification: { icon: Award, color: 'text-purple-400' },
+  Social: { icon: ClipboardCheck, color: 'text-green-400' },
+  Governance: { icon: Shield, color: 'text-yellow-400' },
+  Environmental: { icon: Leaf, color: 'text-emerald-400' },
+  System: { icon: Info, color: 'text-blue-400' },
 };
 
 function TypeIcon({ type }: { type: string }) {

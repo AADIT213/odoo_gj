@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Leaf, Heart, Shield, Trophy, FileText, BrainCircuit, Bell, CheckCircle, AlertTriangle, Info, ShoppingBag, X, CheckCheck } from 'lucide-react';
+import { LayoutDashboard, Users, Leaf, Heart, Shield, Trophy, FileText, BrainCircuit, Bell, ShoppingBag, X, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -69,7 +69,7 @@ export default function DashboardLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <motion.aside 
+      <motion.aside
         initial={{ x: -250 }}
         animate={{ x: 0 }}
         className="w-64 border-r bg-card/50 glass flex-shrink-0 flex flex-col hidden md:flex"
@@ -88,8 +88,8 @@ export default function DashboardLayout() {
                 to={item.href}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
-                  isActive 
-                    ? "bg-primary/10 text-primary font-medium" 
+                  isActive
+                    ? "bg-primary/10 text-primary font-medium"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
@@ -120,7 +120,7 @@ export default function DashboardLayout() {
             {sidebarNavItems.find(i => i.href === location.pathname)?.title || 'Overview'}
           </div>
           <div className="flex items-center gap-4">
-            <button 
+            <button
               className="relative p-2 rounded-full hover:bg-accent transition-colors"
               onClick={() => setShowNotifications(!showNotifications)}
             >
@@ -131,20 +131,20 @@ export default function DashboardLayout() {
                 </span>
               )}
             </button>
-            
+
             {showNotifications && (
               <div className="absolute top-14 right-6 w-80 bg-card border border-border shadow-2xl rounded-xl z-50 overflow-hidden glass">
                 <div className="p-3 border-b font-medium flex justify-between items-center">
                   <span>Notifications</span>
-              {unreadCount > 0 && (
-                <span
-                  id="notif-mark-all-bell"
-                  className="text-xs text-primary cursor-pointer hover:underline flex items-center gap-1"
-                  onClick={() => markAllReadMutation.mutate()}
-                >
-                  <CheckCheck className="w-3 h-3" /> Mark all read
-                </span>
-              )}
+                  {unreadCount > 0 && (
+                    <span
+                      id="notif-mark-all-bell"
+                      className="text-xs text-primary cursor-pointer hover:underline flex items-center gap-1"
+                      onClick={() => markAllReadMutation.mutate()}
+                    >
+                      <CheckCheck className="w-3 h-3" /> Mark all read
+                    </span>
+                  )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {isLoading ? (
@@ -153,19 +153,18 @@ export default function DashboardLayout() {
                     <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
                   ) : (
                     notifications?.map((n: any) => (
-                      <div 
-                        key={n.id} 
+                      <div
+                        key={n.id}
                         className={`group p-3 border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors ${n.is_read ? 'opacity-60' : 'bg-primary/5'}`}
                         onClick={() => {
                           if (!n.is_read) markReadMutation.mutate(n.id);
                         }}
                       >
                         <div className="flex items-start gap-2">
-                          <div className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${
-                            n.priority === 'Critical' ? 'bg-red-500' :
-                            n.priority === 'High' ? 'bg-orange-400' :
-                            n.priority === 'Medium' ? 'bg-blue-400' : 'bg-slate-400'
-                          }`} />
+                          <div className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${n.priority === 'Critical' ? 'bg-red-500' :
+                              n.priority === 'High' ? 'bg-orange-400' :
+                                n.priority === 'Medium' ? 'bg-blue-400' : 'bg-slate-400'
+                            }`} />
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm truncate">{n.title}</div>
                             <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</div>
