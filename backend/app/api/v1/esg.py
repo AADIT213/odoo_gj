@@ -124,9 +124,14 @@ def update_settings(
     settings_in: AppSettings,
     current_user=Depends(deps.get_current_active_superuser),
 ):
-    """Toggle auto-emission calculation. SuperAdmin only."""
+    """
+    Update ESG settings. SuperAdmin only.
+    """
     config = emission_service.get_settings(db)
-    config.auto_emission_calc_enabled = settings_in.auto_emission_calc_enabled
+    if settings_in.auto_emission_calc_enabled is not None:
+        config.auto_emission_calc_enabled = settings_in.auto_emission_calc_enabled
+    if hasattr(settings_in, 'evidence_required_enabled'):
+        config.evidence_required_enabled = settings_in.evidence_required_enabled
     db.commit()
     db.refresh(config)
     return config

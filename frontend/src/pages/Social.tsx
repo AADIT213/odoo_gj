@@ -11,6 +11,7 @@ export default function Social() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'csr' | 'diversity' | 'training'>('csr');
   const [proofUrl, setProofUrl] = useState<string>('');
+  const [enrollError, setEnrollError] = useState<string>('');
   const [unlockedBadges, setUnlockedBadges] = useState<any[]>([]);
   const { data: activities, isLoading: activitiesLoading } = useQuery({
     queryKey: ['csrActivities'],
@@ -43,6 +44,15 @@ export default function Social() {
       return res.data;
     }
   });
+  // Settings: evidence requirement toggle
+  const { data: esgSettings } = useQuery({
+    queryKey: ['esgSettings'],
+    queryFn: async () => {
+      const res = await api.get('/esg/settings');
+      return res.data as { evidence_required_enabled: boolean };
+    },
+  });
+  const evidenceEnabled = esgSettings?.evidence_required_enabled ?? false;
 
   const enrollMutation = useMutation({
     mutationFn: async ({ activityId, url }: { activityId: number, url: string }) => {
@@ -58,13 +68,19 @@ export default function Social() {
       queryClient.invalidateQueries({ queryKey: ['participations'] });
       setProofUrl('');
       alert('Successfully enrolled!');
-    }
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.detail || 'Enrollment failed.');
+    },
   });
 
   const approveMutation = useMutation({
     mutationFn: async (participationId: number) => {
       const res = await api.put(`/social/participations/${participationId}/approve`);
       return res.data;
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.detail || 'Approval failed.');
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['participations'] });
@@ -75,7 +91,7 @@ export default function Social() {
       } else {
         alert('Participation approved!');
       }
-    }
+    },
   });
 
   const totalPoints = activities?.reduce((acc: number, item: any) => acc + (item.points_awarded || 0), 0) || 0;
@@ -159,9 +175,10 @@ export default function Social() {
                                       className="h-8 text-xs"
                                       onChange={(e) => setProofUrl(e.target.value)}
                                   />
-                                  <Button size="sm" onClick={() => enrollMutation.mutate({ activityId: activity.id, url: proofUrl })} disabled={enrollMutation.isPending}>
+                                  <Button size="sm" onClick={() => { if (evidenceEnabled && !proofUrl) { setEnrollError('Proof URL is required.'); return; } setEnrollError(''); enrollMutation.mutate({ activityId: activity.id, url: proofUrl }); }} disabled={enrollMutation.isPending}>
                                     <CheckCircle2 className="w-4 h-4 mr-1" /> Enroll
                                   </Button>
+                                  {enrollError && <p className="text-sm text-red-500 mt-1">{enrollError}</p>}
                               </div>
                           </div>
                         </div>

@@ -85,6 +85,20 @@ def seed_db():
             db.commit()
     print("4. EmissionFactors seeded.")
 
+    # Add missing source types for Task 9
+    extra_factors = [
+        {"source_type": "Purchase", "factor": 0.5},
+        {"source_type": "Manufacturing", "factor": 2.5},
+        {"source_type": "Expense", "factor": 0.3},
+        {"source_type": "Fleet", "factor": 2.68},
+    ]
+    for fd in extra_factors:
+        factor = db.query(EmissionFactor).filter(EmissionFactor.source_type == fd["source_type"]).first()
+        if not factor:
+            factor = EmissionFactor(source_type=fd["source_type"], factor=fd["factor"])
+            db.add(factor)
+            db.commit()
+
     # 5. CarbonTransaction
     ct_count = db.query(CarbonTransaction).count()
     if ct_count == 0:

@@ -18,6 +18,7 @@ class ESGWeightConfig(ESGWeightConfigBase):
 
 class AppSettings(BaseModel):
     auto_emission_calc_enabled: bool
+    evidence_required_enabled: bool = False
 
     class Config:
         from_attributes = True

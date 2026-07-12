@@ -84,6 +84,14 @@ def approve_participation(db: Session, participation_id: int, manager_id: int) -
     if not activity or not user:
         return None
 
+    # 0. Check evidence requirement
+    # Fetch settings to see if evidence is required
+    from app.services import emission_service
+    settings = emission_service.get_settings(db)
+    if getattr(settings, 'evidence_required_enabled', False) and not participation.proof_url:
+        # Do not approve, raise error
+        raise HTTPException(status_code=400, detail="Proof of participation is required before approval.")
+
     # 1. Set Approved and points
     participation.is_approved = True
     participation.points_earned = activity.points_awarded

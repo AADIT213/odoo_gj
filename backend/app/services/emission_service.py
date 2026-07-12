@@ -27,6 +27,7 @@ def get_settings(db: Session) -> ESGWeightConfig:
             soc_weight=0.30,
             gov_weight=0.30,
             auto_emission_calc_enabled=False,
+            evidence_required_enabled=False,
         )
         db.add(config)
         db.commit()

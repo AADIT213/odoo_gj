@@ -73,17 +73,24 @@ export default function Environmental() {
     queryKey: ['esgSettings'],
     queryFn: async () => {
       const res = await api.get('/esg/settings');
-      return res.data as { auto_emission_calc_enabled: boolean };
+      return res.data as { auto_emission_calc_enabled: boolean; evidence_required_enabled: boolean };
     },
     enabled: isAdmin,
   });
 
   const autoCalcEnabled = settings?.auto_emission_calc_enabled ?? false;
+  const evidenceEnabled = settings?.evidence_required_enabled ?? false;
 
   // ── mutations ─────────────────────────────────────────────────────────────
   const toggleMutation = useMutation({
     mutationFn: async (enabled: boolean) =>
       api.put('/esg/settings', { auto_emission_calc_enabled: enabled }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['esgSettings'] }),
+  });
+
+  const toggleEvidenceMutation = useMutation({
+    mutationFn: async (enabled: boolean) =>
+      api.put('/esg/settings', { auto_emission_calc_enabled: settings?.auto_emission_calc_enabled ?? false, evidence_required_enabled: enabled }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['esgSettings'] }),
   });
 
@@ -225,6 +232,36 @@ export default function Environmental() {
               )}
               <span className={`text-xs font-semibold ${autoCalcEnabled ? 'text-esg-green' : 'text-muted-foreground'}`}>
                 {autoCalcEnabled ? 'ON' : 'OFF'}
+              </span>
+            </div>
+          )}
+          {/* Evidence Required toggle */}
+          {isAdmin && (
+            <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2 glass ml-4">
+              <AlertCircle className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Evidence Required</span>
+              {settingsLoading ? (
+                <div className="w-10 h-5 rounded-full bg-muted animate-pulse" />
+              ) : (
+                <button
+                  id="evidence-toggle"
+                  role="switch"
+                  aria-checked={evidenceEnabled}
+                  onClick={() => toggleEvidenceMutation.mutate(!evidenceEnabled)}
+                  disabled={toggleEvidenceMutation.isPending}
+                  className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                    evidenceEnabled ? 'bg-esg-green' : 'bg-muted-foreground/30'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                      evidenceEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              )}
+              <span className={`text-xs font-semibold ${evidenceEnabled ? 'text-esg-green' : 'text-muted-foreground'}`}>
+                {evidenceEnabled ? 'ON' : 'OFF'}
               </span>
             </div>
           )}

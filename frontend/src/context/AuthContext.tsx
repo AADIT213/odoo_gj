@@ -25,16 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
 
-  // Helper to fetch full user profile using the existing API client
-  const fetchUser = async (jwt: string) => {
-    try {
-      const response = await api.get<User>('/users/me');
-      setUser(response.data);
-    } catch (error) {
-      // If fetching fails (e.g., token invalid/expired), clean up auth state
-      logout();
-    }
-  };
+
 
   useEffect(() => {
     if (token) {
