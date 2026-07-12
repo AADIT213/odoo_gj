@@ -82,3 +82,11 @@ def resolve_compliance_issue(
     if current_user.role not in ["SuperAdmin", "Manager"]:
         raise HTTPException(status_code=403, detail="Not enough privileges")
     return crud_governance.resolve_compliance_issue(db, issue_id=id)
+
+@router.post("/compliance-issues/detect-overdue", response_model=List[ComplianceIssue])
+def detect_overdue_issues(
+    db: deps.SessionDep,
+    current_user = Depends(deps.get_current_active_user),
+):
+    # Anyone can trigger detection for the demo, but in prod this might be a cron or Admin only.
+    return crud_governance.detect_overdue_issues(db)

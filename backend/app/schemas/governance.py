@@ -53,6 +53,7 @@ class Audit(AuditBase):
 
 class ComplianceIssueBase(BaseModel):
     department_id: int
+    owner_id: int
     title: str
     description: Optional[str] = None
     severity: str = "Medium"
