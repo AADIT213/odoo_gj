@@ -291,12 +291,14 @@ http://localhost:5173
 
 # 👥 Default Users
 
-| Role | Email |
-|------|-------|
-| Super Admin | admin@ecosphere.com |
-| ESG Manager | manager@ecosphere.com |
-| Department Head | dept_head@ecosphere.com |
-| Employee | employee@ecosphere.com |
+All default test accounts use the password: `adminpassword` (unless otherwise configured in your own seeding scripts).
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | admin@ecosphere.com | `adminpassword` |
+| ESG Manager | manager@ecosphere.com | `adminpassword` |
+| Department Head | dept_head@ecosphere.com | `adminpassword` |
+| Employee | employee@ecosphere.com | `adminpassword` |
 
 ---
 
