@@ -1,11 +1,44 @@
-
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Heart, Shield, Activity, Trophy } from 'lucide-react';
+import { Leaf, Heart, Shield, Activity, Trophy, Settings } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardOverview() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const { data: weightsData, isLoading: weightsLoading } = useQuery({
+    queryKey: ['esgWeights'],
+    queryFn: async () => {
+      const res = await api.get('/esg/weights');
+      return res.data;
+    }
+  });
+
+  const [editWeights, setEditWeights] = useState({ env_weight: 0.4, soc_weight: 0.3, gov_weight: 0.3 });
+  const [isEditingWeights, setIsEditingWeights] = useState(false);
+
+  useEffect(() => {
+    if (weightsData) {
+      setEditWeights(weightsData);
+    }
+  }, [weightsData]);
+
+  const updateWeightsMutation = useMutation({
+    mutationFn: async (newWeights: any) => {
+      return api.put('/esg/weights', newWeights);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['esgWeights'] });
+      queryClient.invalidateQueries({ queryKey: ['orgScore'] });
+      setIsEditingWeights(false);
+    }
+  });
   const { data: scoreData, isLoading: scoreLoading } = useQuery({
     queryKey: ['orgScore'],
     queryFn: async () => {
@@ -93,6 +126,69 @@ export default function DashboardOverview() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ESG Configuration Card */}
+      {user?.role === 'SuperAdmin' && (
+        <Card className="glass">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle>ESG Weight Configuration</CardTitle>
+            <Settings className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {weightsLoading ? <div className="animate-pulse h-8 w-1/3 bg-muted rounded"></div> : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Configure the weights for Environmental, Social, and Governance scores. Must sum to 1.0.</p>
+                <div className="flex gap-4 items-end">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium">Environmental</label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      value={editWeights.env_weight} 
+                      onChange={e => setEditWeights({ ...editWeights, env_weight: parseFloat(e.target.value) })}
+                      disabled={!isEditingWeights}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium">Social</label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      value={editWeights.soc_weight} 
+                      onChange={e => setEditWeights({ ...editWeights, soc_weight: parseFloat(e.target.value) })}
+                      disabled={!isEditingWeights}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium">Governance</label>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      value={editWeights.gov_weight} 
+                      onChange={e => setEditWeights({ ...editWeights, gov_weight: parseFloat(e.target.value) })}
+                      disabled={!isEditingWeights}
+                    />
+                  </div>
+                  {isEditingWeights ? (
+                    <div className="flex gap-2">
+                       <Button variant="outline" onClick={() => {
+                         setIsEditingWeights(false);
+                         setEditWeights(weightsData);
+                       }}>Cancel</Button>
+                       <Button onClick={() => updateWeightsMutation.mutate(editWeights)} disabled={updateWeightsMutation.isPending}>Save & Recalculate</Button>
+                    </div>
+                  ) : (
+                    <Button onClick={() => setIsEditingWeights(true)}>Edit Weights</Button>
+                  )}
+                </div>
+                {Math.abs(editWeights.env_weight + editWeights.soc_weight + editWeights.gov_weight - 1.0) > 0.001 && (
+                  <p className="text-xs text-red-500">Weights must sum to exactly 1.0 (current sum: {(editWeights.env_weight + editWeights.soc_weight + editWeights.gov_weight).toFixed(2)})</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
