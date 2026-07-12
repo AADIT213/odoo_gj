@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
 import { jwtDecode } from 'jwt-decode';
+import api from '../lib/api';
 
 interface User {
   id: number;
@@ -25,27 +25,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
 
+  // Helper to fetch full user profile using the existing API client
+  const fetchUser = async (jwt: string) => {
+    try {
+      const response = await api.get<User>('/users/me');
+      setUser(response.data);
+    } catch (error) {
+      // If fetching fails (e.g., token invalid/expired), clean up auth state
+      logout();
+    }
+  };
+
   useEffect(() => {
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        // Ensure the token hasn't expired
         if (decoded.exp * 1000 < Date.now()) {
           logout();
         } else {
-          // You might want to fetch full user profile here, but let's rely on token data for now
-          // Assuming backend embeds user id and role in token.
-          setUser({
-            id: decoded.sub,
-            email: decoded.email || '',
-            full_name: decoded.full_name || 'User',
-            role: decoded.role || 'Employee',
-            department_id: decoded.department_id || null,
-          });
+          // Fetch full user profile
+          api.get('/users/me')
+            .then((res) => {
+              setUser(res.data);
+            })
+            .catch(() => {
+              logout();
+            });
         }
       } catch (error) {
         logout();
       }
+    } else {
+      setUser(null);
     }
     setIsLoading(false);
   }, [token]);
