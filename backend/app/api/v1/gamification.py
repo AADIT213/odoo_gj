@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api import deps
 from app.crud import crud_gamification
 from app.models.user import User
-from app.schemas.gamification import Challenge, ChallengeCreate, Badge, BadgeCreate, Reward, RewardCreate, RedemptionResponse
-from app.models.gamification import Reward as RewardModel, Redemption as RedemptionModel
+from app.schemas.gamification import Challenge, ChallengeCreate, Badge, BadgeCreate, Reward, RewardCreate, RedemptionResponse, UserBadgeResponse
+from app.models.gamification import Reward as RewardModel, Redemption as RedemptionModel, UserBadge
 from app.services import redemption_service, notification_service
 
 router = APIRouter()
@@ -89,11 +89,25 @@ def get_my_stats(
     db: deps.SessionDep,
     current_user = Depends(deps.get_current_active_user),
 ):
+    badge_count = db.query(UserBadge).filter(UserBadge.user_id == current_user.id).count()
     return {
         "xp": current_user.xp,
-        "badges": 0,
+        "badges": badge_count,
         "level": current_user.xp // 1000 + 1
     }
+
+@router.get("/me/badges", response_model=List[UserBadgeResponse])
+def get_my_badges(
+    db: deps.SessionDep,
+    current_user = Depends(deps.get_current_active_user),
+):
+    """Returns all badges earned by the current user, including badge details and unlock date."""
+    user_badges = (
+        db.query(UserBadge)
+        .filter(UserBadge.user_id == current_user.id)
+        .all()
+    )
+    return user_badges
 
 @router.put("/rewards/{id}", response_model=Reward)
 def update_reward(

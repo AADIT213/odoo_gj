@@ -16,6 +16,7 @@ const Reports = React.lazy(() => import('./pages/Reports'));
 const Advisor = React.lazy(() => import('./pages/Advisor'));
 const RewardMarketplace = React.lazy(() => import('./pages/RewardMarketplace'));
 const NotificationCenter = React.lazy(() => import('./pages/NotificationCenter'));
+const Badges = React.lazy(() => import('./pages/Badges'));
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
               <Route path="governance" element={<Governance />} />
               <Route path="gamification" element={<Gamification />} />
               <Route path="rewards" element={<RewardMarketplace />} />
+              <Route path="badges" element={<Badges />} />
               <Route path="reports" element={<Reports />} />
               <Route path="advisor" element={<Advisor />} />
               <Route path="notifications" element={<NotificationCenter />} />

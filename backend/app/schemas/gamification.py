@@ -68,3 +68,12 @@ class RedemptionResponse(RedemptionBase):
     
     class Config:
         from_attributes = True
+
+class UserBadgeResponse(BaseModel):
+    id: int
+    badge_id: int
+    date_earned: date
+    badge: Badge
+
+    class Config:
+        from_attributes = True
