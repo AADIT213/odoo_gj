@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api import deps
 from app.crud import crud_social
 from app.schemas.social import CSRActivity, CSRActivityCreate, CSRActivityUpdate, EmployeeParticipation, EmployeeParticipationCreate, EmployeeParticipationUpdate, DiversityMetric, TrainingMetric
+from app.services import notification_service
 
 router = APIRouter()
 
@@ -102,6 +103,12 @@ def approve_participation_endpoint(
     participation = crud_social.approve_participation(db, participation_id=id, manager_id=current_user.id)
     if not participation:
          raise HTTPException(status_code=404, detail="Participation or related activity/user not found")
+    # Notify the employee whose participation was approved
+    if participation.user_id:
+        from app.models.social import CSRActivity as CSRActivityModel
+        activity = db.query(CSRActivityModel).filter(CSRActivityModel.id == participation.activity_id).first()
+        activity_title = activity.title if activity else "CSR Activity"
+        notification_service.send_csr_approved(db, user_id=participation.user_id, activity_title=activity_title)
     return participation
 
 @router.get("/diversity-metrics", response_model=List[DiversityMetric])

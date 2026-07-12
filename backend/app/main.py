@@ -8,6 +8,26 @@ from app.db.session import engine
 # Create tables for dev
 Base.metadata.create_all(bind=engine)
 
+# Idempotent column migration for SQLite (no Alembic).
+# Safely adds new notification columns if they don't exist yet.
+def _run_notification_migrations():
+    from sqlalchemy import text
+    new_cols = [
+        ("priority", "VARCHAR DEFAULT 'Medium'"),
+        ("action_url", "VARCHAR"),
+        ("meta", "TEXT"),
+    ]
+    with engine.connect() as conn:
+        for col_name, col_def in new_cols:
+            try:
+                conn.execute(text(f"ALTER TABLE notification ADD COLUMN {col_name} {col_def}"))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists — safe to ignore
+
+_run_notification_migrations()
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"

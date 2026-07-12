@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api import deps
 from app.crud import crud_governance
 from app.schemas.governance import Policy, PolicyCreate, PolicyAcknowledgement, PolicyAcknowledgementCreate, Audit, AuditCreate, AuditUpdate, ComplianceIssue, ComplianceIssueCreate
+from app.services import notification_service
 
 router = APIRouter()
 
@@ -22,7 +23,10 @@ def create_policy(
     policy_in: PolicyCreate,
     current_user = Depends(deps.get_current_active_superuser),
 ):
-    return crud_governance.create_policy(db, obj_in=policy_in)
+    policy = crud_governance.create_policy(db, obj_in=policy_in)
+    # Notify the current admin/creator of the new policy requirement
+    notification_service.send_policy_assigned(db, user_id=current_user.id, policy_title=policy.title)
+    return policy
 
 @router.post("/policies/acknowledge", response_model=PolicyAcknowledgement)
 def acknowledge_policy(
@@ -54,7 +58,10 @@ def create_audit(
     audit_in: AuditCreate,
     current_user = Depends(deps.get_current_active_superuser),
 ):
-    return crud_governance.create_audit(db, obj_in=audit_in)
+    audit = crud_governance.create_audit(db, obj_in=audit_in)
+    # Notify the creator about the scheduled audit
+    notification_service.send_audit_assigned(db, user_id=current_user.id, audit_title=audit.title)
+    return audit
 
 @router.get("/compliance-issues", response_model=List[ComplianceIssue])
 def read_compliance_issues(
@@ -71,7 +78,15 @@ def create_compliance_issue(
     issue_in: ComplianceIssueCreate,
     current_user = Depends(deps.get_current_active_superuser),
 ):
-    return crud_governance.create_compliance_issue(db, obj_in=issue_in)
+    issue = crud_governance.create_compliance_issue(db, obj_in=issue_in)
+    # Notify the creator about the compliance issue
+    notification_service.send_compliance_issue_created(
+        db,
+        user_id=current_user.id,
+        issue_title=issue.title,
+        severity=getattr(issue, 'severity', 'Medium'),
+    )
+    return issue
 
 @router.put("/compliance-issues/{id}/resolve", response_model=ComplianceIssue)
 def resolve_compliance_issue(

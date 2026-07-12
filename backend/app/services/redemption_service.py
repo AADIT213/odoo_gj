@@ -3,8 +3,7 @@ from sqlalchemy import update
 from fastapi import HTTPException
 from app.models.gamification import Reward, Redemption
 from app.models.user import User
-from app.crud import crud_notification
-from app.schemas.notification import NotificationCreate
+from app.services import notification_service
 
 def redeem_reward(db: Session, user_id: int, reward_id: int) -> Redemption:
     result = db.execute(
@@ -41,14 +40,8 @@ def redeem_reward(db: Session, user_id: int, reward_id: int) -> Redemption:
     )
     db.add(redemption)
     
-    # Send notification
-    notification_in = NotificationCreate(
-        user_id=user_id,
-        title="Reward Redeemed!",
-        message=f"You successfully redeemed '{reward.title}' for {reward.cost_xp} XP.",
-        type="Gamification"
-    )
-    crud_notification.create_notification(db, obj_in=notification_in)
+    # Send notification via typed helper
+    notification_service.send_reward_redeemed(db, user_id=user_id, reward_title=reward.title, xp_cost=reward.cost_xp)
     
     db.commit()
     db.refresh(user)

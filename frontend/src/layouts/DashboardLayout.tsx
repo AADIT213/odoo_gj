@@ -1,6 +1,6 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Leaf, Heart, Shield, Trophy, FileText, BrainCircuit, Bell, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Leaf, Heart, Shield, Trophy, FileText, BrainCircuit, Bell, CheckCircle, AlertTriangle, Info, ShoppingBag, X, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,12 +14,14 @@ const sidebarNavItems = [
   { title: "Social", href: "/social", icon: Heart },
   { title: "Governance", href: "/governance", icon: Shield },
   { title: "Gamification", href: "/gamification", icon: Trophy },
+  { title: "Rewards Store", href: "/rewards", icon: ShoppingBag },
   { title: "Reports", href: "/reports", icon: FileText },
   { title: "AI Advisor", href: "/advisor", icon: BrainCircuit },
 ];
 
 export default function DashboardLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = React.useState(false);
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -27,19 +29,40 @@ export default function DashboardLayout() {
   const { data: notifications, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await api.get('/notifications');
+      const res = await api.get('/notifications?limit=20');
       return res.data;
-    }
+    },
+    refetchInterval: 30000,
   });
 
   const markReadMutation = useMutation({
     mutationFn: async (id: number) => {
-      await api.put(`/notifications/${id}/read`);
+      await api.patch(`/notifications/${id}/read`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     }
   });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => api.patch('/notifications/read-all'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => api.delete(`/notifications/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  });
+
+  function relativeTime(isoString: string): string {
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    return `${Math.floor(diffHr / 24)}d ago`;
+  }
 
   const unreadCount = notifications?.filter((n: any) => !n.is_read).length || 0;
 
@@ -113,18 +136,15 @@ export default function DashboardLayout() {
               <div className="absolute top-14 right-6 w-80 bg-card border border-border shadow-2xl rounded-xl z-50 overflow-hidden glass">
                 <div className="p-3 border-b font-medium flex justify-between items-center">
                   <span>Notifications</span>
-                  {unreadCount > 0 && (
-                    <span 
-                      className="text-xs text-primary cursor-pointer hover:underline"
-                      onClick={() => {
-                        notifications?.forEach((n: any) => {
-                          if (!n.is_read) markReadMutation.mutate(n.id);
-                        });
-                      }}
-                    >
-                      Mark all read
-                    </span>
-                  )}
+              {unreadCount > 0 && (
+                <span
+                  id="notif-mark-all-bell"
+                  className="text-xs text-primary cursor-pointer hover:underline flex items-center gap-1"
+                  onClick={() => markAllReadMutation.mutate()}
+                >
+                  <CheckCheck className="w-3 h-3" /> Mark all read
+                </span>
+              )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {isLoading ? (
@@ -135,26 +155,43 @@ export default function DashboardLayout() {
                     notifications?.map((n: any) => (
                       <div 
                         key={n.id} 
-                        className={`p-3 border-b border-border/50 hover:bg-accent/50 cursor-pointer ${n.is_read ? 'opacity-60' : 'bg-primary/5'}`}
+                        className={`group p-3 border-b border-border/50 hover:bg-accent/50 cursor-pointer transition-colors ${n.is_read ? 'opacity-60' : 'bg-primary/5'}`}
                         onClick={() => {
                           if (!n.is_read) markReadMutation.mutate(n.id);
                         }}
                       >
                         <div className="flex items-start gap-2">
-                          <div className="mt-0.5 shrink-0">
-                            {n.type === 'success' && <CheckCircle className="w-4 h-4 text-green-500" />}
-                            {n.type === 'warning' && <AlertTriangle className="w-4 h-4 text-orange-500" />}
-                            {n.type === 'info' && <Info className="w-4 h-4 text-blue-500" />}
+                          <div className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${
+                            n.priority === 'Critical' ? 'bg-red-500' :
+                            n.priority === 'High' ? 'bg-orange-400' :
+                            n.priority === 'Medium' ? 'bg-blue-400' : 'bg-slate-400'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{n.title}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</div>
+                            <div className="text-[10px] text-muted-foreground/60 mt-1">{relativeTime(n.created_at)}</div>
                           </div>
-                          <div>
-                            <div className="font-medium text-sm">{n.title}</div>
-                            <div className="text-xs text-muted-foreground mt-1">{n.message}</div>
-                            <div className="text-[10px] text-muted-foreground mt-2">{new Date(n.created_at).toLocaleString()}</div>
-                          </div>
+                          <button
+                            id={`bell-delete-${n.id}`}
+                            onClick={e => { e.stopPropagation(); deleteMutation.mutate(n.id); }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:text-destructive transition-all flex-shrink-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </div>
                       </div>
                     ))
                   )}
+                </div>
+                {/* View All link */}
+                <div className="p-2 border-t text-center">
+                  <button
+                    id="notif-view-all"
+                    onClick={() => { setShowNotifications(false); navigate('/notifications'); }}
+                    className="text-xs text-primary hover:underline py-1"
+                  >
+                    View all notifications →
+                  </button>
                 </div>
               </div>
             )}

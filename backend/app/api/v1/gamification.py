@@ -5,7 +5,7 @@ from app.crud import crud_gamification
 from app.models.user import User
 from app.schemas.gamification import Challenge, ChallengeCreate, Badge, BadgeCreate, Reward, RewardCreate, RedemptionResponse
 from app.models.gamification import Reward as RewardModel, Redemption as RedemptionModel
-from app.services import redemption_service
+from app.services import redemption_service, notification_service
 
 router = APIRouter()
 
@@ -25,7 +25,10 @@ def create_challenge(
     challenge_in: ChallengeCreate,
     current_user = Depends(deps.get_current_active_superuser),
 ):
-    return crud_gamification.create_challenge(db, obj_in=challenge_in)
+    challenge = crud_gamification.create_challenge(db, obj_in=challenge_in)
+    # Notify the creator about the new challenge
+    notification_service.send_challenge_assigned(db, user_id=current_user.id, challenge_title=challenge.title)
+    return challenge
 
 @router.get("/badges", response_model=List[Badge])
 def read_badges(
