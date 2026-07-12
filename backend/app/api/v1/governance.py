@@ -58,8 +58,8 @@ def create_audit(
 
 @router.get("/compliance-issues", response_model=List[ComplianceIssue])
 def read_compliance_issues(
+    db: deps.SessionDep,
     department_id: int = None,
-    db: deps.SessionDep = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user),
 ):
     return crud_governance.get_compliance_issues(db, department_id=department_id)

@@ -36,8 +36,8 @@ def update_environmental_status(
 
 @router.get("/goals", response_model=List[SustainabilityGoal])
 def read_goals(
+    db: deps.SessionDep,
     department_id: int = None,
-    db: deps.SessionDep = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user),
 ):
     return crud_environmental.get_sustainability_goals(db, department_id=department_id)
@@ -53,8 +53,8 @@ def create_goal(
 
 @router.get("/transactions", response_model=List[CarbonTransaction])
 def read_transactions(
+    db: deps.SessionDep,
     department_id: int = None,
-    db: deps.SessionDep = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user),
 ):
     return crud_environmental.get_carbon_transactions(db, department_id=department_id)

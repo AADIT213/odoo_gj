@@ -7,8 +7,8 @@ router = APIRouter()
 
 @router.get("/recommendations")
 def get_ai_recommendations(
+    db: deps.SessionDep,
     department_id: int = None,
-    db: deps.SessionDep = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user),
 ):
     """

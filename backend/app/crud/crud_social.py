@@ -4,7 +4,7 @@ from datetime import datetime
 from app.models.social import CSRActivity, EmployeeParticipation, DiversityMetric, TrainingMetric, AuditLog
 from app.schemas.social import CSRActivityCreate, CSRActivityUpdate, EmployeeParticipationCreate, EmployeeParticipationUpdate
 from app.models.user import User
-from app.models.department import Department
+from app.services import esg_engine
 
 def get_activities(db: Session, skip: int = 0, limit: int = 100) -> List[CSRActivity]:
     return db.query(CSRActivity).offset(skip).limit(limit).all()
@@ -92,17 +92,7 @@ def approve_participation(db: Session, participation_id: int, manager_id: int) -
     user.xp = (user.xp or 0) + activity.points_awarded
     user.level = (user.xp // 1000) + 1
 
-    # 3. Update Department Social Score and ESG
-    if user.department_id:
-        dept = db.query(Department).filter(Department.id == user.department_id).first()
-        if dept:
-            # Simple formula: add hours or points to soc_score. Let's add 0.5 for each point.
-            # In a real app this would be more complex or capped.
-            dept.soc_score = min(100.0, (dept.soc_score or 0.0) + (activity.points_awarded * 0.1))
-            # Recalculate total_score
-            dept.total_score = ((dept.env_score or 0.0) + (dept.soc_score or 0.0) + (dept.gov_score or 0.0)) / 3.0
-
-    # 4. Audit Log
+    # 3. Audit Log
     audit = AuditLog(
         action="Approve Participation",
         user_id=manager_id,
@@ -110,9 +100,14 @@ def approve_participation(db: Session, participation_id: int, manager_id: int) -
         timestamp=datetime.utcnow().isoformat()
     )
     db.add(audit)
-    
+
     db.commit()
     db.refresh(participation)
+
+    # 4. Recalculate department ESG score via the engine
+    if user.department_id:
+        esg_engine.recalculate_department_score(db, user.department_id)
+
     return participation
 
 def get_diversity_metrics(db: Session) -> List[DiversityMetric]:

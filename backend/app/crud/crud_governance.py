@@ -2,8 +2,8 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import date
 from app.models.governance import Policy, PolicyAcknowledgement, Audit, ComplianceIssue
-from app.models.department import Department
 from app.schemas.governance import PolicyCreate, PolicyAcknowledgementCreate, AuditCreate, AuditUpdate, ComplianceIssueCreate
+from app.services import esg_engine
 
 def get_policies(db: Session, skip: int = 0, limit: int = 100) -> List[Policy]:
     return db.query(Policy).offset(skip).limit(limit).all()
@@ -61,15 +61,10 @@ def resolve_compliance_issue(db: Session, issue_id: int) -> Optional[ComplianceI
     db_obj = db.query(ComplianceIssue).filter(ComplianceIssue.id == issue_id).first()
     if db_obj and db_obj.status != "Resolved":
         db_obj.status = "Resolved"
-        
-        # Increase Department gov_score by 5.0
-        dept = db.query(Department).filter(Department.id == db_obj.department_id).first()
-        if dept:
-            dept.gov_score = min(100.0, (dept.gov_score or 0.0) + 5.0)
-            dept.total_score = ((dept.env_score or 0.0) + (dept.soc_score or 0.0) + (dept.gov_score or 0.0)) / 3.0
-            
         db.commit()
         db.refresh(db_obj)
+        # Recalculate governance score via engine
+        esg_engine.recalculate_department_score(db, db_obj.department_id)
     return db_obj
 
 def detect_overdue_issues(db: Session) -> List[ComplianceIssue]:
@@ -78,17 +73,18 @@ def detect_overdue_issues(db: Session) -> List[ComplianceIssue]:
         ComplianceIssue.status == "Open",
         ComplianceIssue.due_date < today
     ).all()
-    
+
+    affected_depts = set()
     for issue in overdue_issues:
         issue.status = "Overdue"
-        dept = db.query(Department).filter(Department.id == issue.department_id).first()
-        if dept:
-            dept.gov_score = max(0.0, (dept.gov_score or 0.0) - 5.0)
-            dept.total_score = ((dept.env_score or 0.0) + (dept.soc_score or 0.0) + (dept.gov_score or 0.0)) / 3.0
-            
+        affected_depts.add(issue.department_id)
+
     if overdue_issues:
         db.commit()
         for issue in overdue_issues:
             db.refresh(issue)
-            
+        # Recalculate governance for every affected department via the engine
+        for dept_id in affected_depts:
+            esg_engine.recalculate_department_score(db, dept_id)
+
     return overdue_issues
