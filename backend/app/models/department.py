@@ -17,4 +17,4 @@ class Department(Base):
     total_score = Column(Float, default=0.0)
 
     # Relationships
-    users = relationship("User", back_populates="department")
+    users = relationship("User", back_populates="department", foreign_keys="[User.department_id]")

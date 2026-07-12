@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, FileWarning, CheckCircle, AlertTriangle, FileText, Plus, CheckCircle2 } from 'lucide-react';
+import { Shield, FileWarning, CheckCircle, AlertTriangle, FileText, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -169,15 +168,17 @@ export default function Governance() {
                   <Input type="date" value={newIssue.due_date} onChange={e => setNewIssue({...newIssue, due_date: e.target.value})} />
                   <Input placeholder="Owner ID" type="number" value={newIssue.owner_id} onChange={e => setNewIssue({...newIssue, owner_id: parseInt(e.target.value)})} />
                 </div>
-                <Select value={newIssue.severity} onValueChange={v => setNewIssue({...newIssue, severity: v})}>
-                  <SelectTrigger><SelectValue placeholder="Severity" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Low">Low</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Critical">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select 
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={newIssue.severity} 
+                  onChange={(e) => setNewIssue({...newIssue, severity: e.target.value})}
+                >
+                  <option value="" disabled>Severity</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
                 <div className="flex gap-2 justify-end">
                   <Button size="sm" variant="outline" onClick={() => setShowCreateForm(false)}>Cancel</Button>
                   <Button size="sm" onClick={() => createIssueMutation.mutate()} disabled={createIssueMutation.isPending || !newIssue.title || !newIssue.due_date}>Save Issue</Button>

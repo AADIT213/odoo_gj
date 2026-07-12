@@ -19,4 +19,4 @@ class User(Base):
     level = Column(Integer, default=1)
     
     # Relationships
-    department = relationship("Department", back_populates="users")
+    department = relationship("Department", back_populates="users", foreign_keys="[User.department_id]")
