@@ -106,9 +106,17 @@ def approve_participation_endpoint(
     # Notify the employee whose participation was approved
     if participation.user_id:
         from app.models.social import CSRActivity as CSRActivityModel
+        from app.services import badge_service
+        
         activity = db.query(CSRActivityModel).filter(CSRActivityModel.id == participation.activity_id).first()
         activity_title = activity.title if activity else "CSR Activity"
         notification_service.send_csr_approved(db, user_id=participation.user_id, activity_title=activity_title)
+        
+        # Check and award badges based on new XP
+        new_badges = badge_service.check_and_award_badges(db, user_id=participation.user_id)
+        # Inject into ORM object so Pydantic serializes it
+        participation.new_badges = [{"id": b.id, "name": b.name, "description": b.description, "icon_url": b.icon_url} for b in new_badges]
+        
     return participation
 
 @router.get("/diversity-metrics", response_model=List[DiversityMetric])

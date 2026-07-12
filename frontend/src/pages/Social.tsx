@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, Clock, CheckCircle2 } from 'lucide-react';
+import { Users, Clock, CheckCircle2, Award } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 
 export default function Social() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'csr' | 'diversity' | 'training'>('csr');
   const [proofUrl, setProofUrl] = useState<string>('');
-  
+  const [unlockedBadges, setUnlockedBadges] = useState<any[]>([]);
   const { data: activities, isLoading: activitiesLoading } = useQuery({
     queryKey: ['csrActivities'],
     queryFn: async () => {
@@ -65,9 +66,15 @@ export default function Social() {
       const res = await api.put(`/social/participations/${participationId}/approve`);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['participations'] });
-      alert('Participation approved!');
+      
+      // Check for auto-awarded badges
+      if (data.new_badges && data.new_badges.length > 0) {
+        setUnlockedBadges(data.new_badges);
+      } else {
+        alert('Participation approved!');
+      }
     }
   });
 
@@ -236,6 +243,46 @@ export default function Social() {
               </CardContent>
           </Card>
       )}
+
+      {/* Badge Unlock Toast Modal */}
+      <AnimatePresence>
+        {unlockedBadges.length > 0 && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm" onClick={() => setUnlockedBadges([])}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm"
+              onClick={e => e.stopPropagation()}
+            >
+              <Card className="shadow-2xl border-primary/50 text-center bg-card">
+                <CardHeader>
+                  <CardTitle className="text-2xl text-primary flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                      <Award className="w-10 h-10 text-primary" />
+                    </div>
+                    New Badge Unlocked!
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {unlockedBadges.map((badge, idx) => (
+                    <div key={idx} className="bg-accent/20 p-4 rounded-xl border border-primary/20">
+                      <h3 className="text-xl font-bold">{badge.name}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{badge.description || "You earned a new badge!"}</p>
+                    </div>
+                  ))}
+                  <Button 
+                    className="w-full mt-4" 
+                    onClick={() => setUnlockedBadges([])}
+                  >
+                    Awesome!
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

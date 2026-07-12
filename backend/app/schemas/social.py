@@ -46,6 +46,7 @@ class EmployeeParticipationUpdate(BaseModel):
 class EmployeeParticipation(EmployeeParticipationBase):
     id: int
     is_approved: bool
+    new_badges: Optional[list] = None
 
     class Config:
         from_attributes = True
