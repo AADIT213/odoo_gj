@@ -66,10 +66,10 @@ The following users are created automatically when running `seed_db.py`.
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
-| **Super Admin** | `admin@ecosphere.com` | `admin123` |
-| **ESG Manager** | `manager@ecosphere.com` | `manager123` |
-| **Department Head** | `dept_head@ecosphere.com` | `head123` |
-| **Employee** | `employee@ecosphere.com` | `emp123` |
+| **Super Admin** | `admin@ecosphere.com` | `adminpassword` |
+| **ESG Manager** | `manager@ecosphere.com` | `adminpassword` |
+| **Department Head** | `dept_head@ecosphere.com` | `adminpassword` |
+| **Employee** | `employee@ecosphere.com` | `adminpassword` |
 
 ---
 
