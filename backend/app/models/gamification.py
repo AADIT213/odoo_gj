@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Boolean, DateTime, func
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
 
@@ -33,6 +33,10 @@ class Reward(Base):
     description = Column(String)
     cost_xp = Column(Integer, nullable=False)
     stock = Column(Integer, default=100)
+    category = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
+    status = Column(String, default="active")
+    created_at = Column(DateTime, server_default=func.now())
 
 class ActivityLog(Base):
     id = Column(Integer, primary_key=True, index=True)
@@ -43,3 +47,14 @@ class ActivityLog(Base):
     timestamp = Column(String, nullable=False) # Store ISO format string for simplicity
 
     user = relationship("User")
+
+class Redemption(Base):
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    reward_id = Column(Integer, ForeignKey("reward.id"), nullable=False)
+    xp_used = Column(Integer, nullable=False)
+    status = Column(String, default="fulfilled")
+    redeemed_at = Column(DateTime, server_default=func.now())
+    
+    user = relationship("User")
+    reward = relationship("Reward")

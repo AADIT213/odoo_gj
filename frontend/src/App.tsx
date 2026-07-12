@@ -14,6 +14,7 @@ const Governance = React.lazy(() => import('./pages/Governance'));
 const Gamification = React.lazy(() => import('./pages/Gamification'));
 const Reports = React.lazy(() => import('./pages/Reports'));
 const Advisor = React.lazy(() => import('./pages/Advisor'));
+const RewardMarketplace = React.lazy(() => import('./pages/RewardMarketplace'));
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
               <Route path="social" element={<Social />} />
               <Route path="governance" element={<Governance />} />
               <Route path="gamification" element={<Gamification />} />
+              <Route path="rewards" element={<RewardMarketplace />} />
               <Route path="reports" element={<Reports />} />
               <Route path="advisor" element={<Advisor />} />
             </Route>

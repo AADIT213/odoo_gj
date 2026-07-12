@@ -1,9 +1,11 @@
 from typing import List, Dict, Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from app.api import deps
 from app.crud import crud_gamification
 from app.models.user import User
-from app.schemas.gamification import Challenge, ChallengeCreate, Badge, BadgeCreate, Reward, RewardCreate
+from app.schemas.gamification import Challenge, ChallengeCreate, Badge, BadgeCreate, Reward, RewardCreate, RedemptionResponse
+from app.models.gamification import Reward as RewardModel, Redemption as RedemptionModel
+from app.services import redemption_service
 
 router = APIRouter()
 
@@ -89,3 +91,69 @@ def get_my_stats(
         "badges": len(current_user.badges),
         "level": current_user.xp // 1000 + 1
     }
+
+@router.put("/rewards/{id}", response_model=Reward)
+def update_reward(
+    *,
+    db: deps.SessionDep,
+    id: int,
+    reward_in: RewardCreate,
+    current_user = Depends(deps.get_current_active_superuser),
+):
+    reward = db.query(RewardModel).filter(RewardModel.id == id).first()
+    if not reward:
+        raise HTTPException(status_code=404, detail="Reward not found")
+    
+    update_data = reward_in.dict(exclude_unset=True)
+    for field in update_data:
+        setattr(reward, field, update_data[field])
+        
+    db.commit()
+    db.refresh(reward)
+    return reward
+
+@router.delete("/rewards/{id}", response_model=Reward)
+def delete_reward(
+    *,
+    db: deps.SessionDep,
+    id: int,
+    current_user = Depends(deps.get_current_active_superuser),
+):
+    reward = db.query(RewardModel).filter(RewardModel.id == id).first()
+    if not reward:
+        raise HTTPException(status_code=404, detail="Reward not found")
+    
+    reward.status = "inactive"
+    db.commit()
+    db.refresh(reward)
+    return reward
+
+@router.post("/rewards/{id}/redeem")
+def redeem_reward(
+    *,
+    db: deps.SessionDep,
+    id: int,
+    current_user = Depends(deps.get_current_active_user),
+):
+    redemption = redemption_service.redeem_reward(db, user_id=current_user.id, reward_id=id)
+    db.refresh(current_user)
+    db.refresh(redemption.reward)
+    
+    return {
+        "reward": redemption.reward,
+        "redemption": redemption,
+        "new_xp": current_user.xp
+    }
+
+@router.get("/users/{id}/redemptions", response_model=List[RedemptionResponse])
+def get_user_redemptions(
+    *,
+    db: deps.SessionDep,
+    id: int,
+    current_user = Depends(deps.get_current_active_user),
+):
+    if id != current_user.id and not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+        
+    redemptions = db.query(RedemptionModel).filter(RedemptionModel.user_id == id).all()
+    return redemptions
